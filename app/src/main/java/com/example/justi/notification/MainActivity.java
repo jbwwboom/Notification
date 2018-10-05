@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.provider.Settings;
@@ -17,6 +18,8 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -116,44 +119,35 @@ public class MainActivity extends AppCompatActivity {
             changeInterceptedNotificationImage(receivedNotificationCode);
 
             if(receivedNotificationCode == NotificationService.InterceptedNotificationCode.MAPS_CODE){
-                String pack= "com.google.android.apps.maps"; // ex. for whatsapp;
-                /*Context remotePackageContext = null;
-                Bitmap bmp = null;
-                try {
-                    remotePackageContext = getApplicationContext().createPackageContext(pack, 0);
-                    Drawable icon = remotePackageContext.getResources().getDrawable(id);
-                    if(icon !=null) {
-                        bmp = ((BitmapDrawable) icon).getBitmap();
-                        imageView.setImageBitmap(bmp);
-                    }
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }*/
+                Bundle bitmap = intent.getBundleExtra("Bitmap Code");
+                if(bitmap != null){
+                    byte[] array = bitmap.getByteArray("Bitmap");
+                    Bitmap bmp = BitmapFactory.decodeByteArray(array, 0, array.length);
+                    imageView.setImageBitmap(bmp);
+                }
+                /*String pack= "com.google.android.apps.maps"; // ex. for whatsapp;
                 Bundle extras = intent.getBundleExtra("Icon Code");
 
-                int iconId = extras.getInt(Notification.EXTRA_SMALL_ICON);
+                int iconId = extras.getInt(Notification.EXTRA_SMALL_ICON); // SMALL ICON
+                int id = 2130903048; //ICON
 
                 try {
                     PackageManager manager = getPackageManager();
                     Resources resources = manager.getResourcesForApplication(pack);
 
-                    Drawable icon = resources.getDrawable(iconId);
-
+                    //Drawable icon = resources.getDrawable(iconId);
+                    Drawable icon = resources.getDrawable(id);
                     imageView.setImageDrawable(icon);
+
 
                 } catch (PackageManager.NameNotFoundException e) {
                     e.printStackTrace();
                 }
 
-                if (extras.containsKey(Notification.EXTRA_PICTURE)) {
+                if (extras.containsKey(Notification.EXTRA_LARGE_ICON_BIG)) {
                     // this bitmap contain the picture attachment
-                    Bitmap bmp = (Bitmap) extras.get(Notification.EXTRA_PICTURE);
-                }
-
-                //textView.setText((String) bundle.get("android.icon"));
-                //Bitmap bigIcon = (Bitmap) bundle.get();
-                //imageView.setImageBitmap(bigIcon);*/
+                    Bitmap bmp = (Bitmap) extras.get(Notification.EXTRA_LARGE_ICON_BIG);
+                }*/
             }
         }
     }

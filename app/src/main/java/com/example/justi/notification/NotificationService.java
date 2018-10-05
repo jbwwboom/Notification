@@ -1,10 +1,26 @@
 package com.example.justi.notification;
 import android.app.Notification;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.drawable.Icon;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.service.notification.NotificationListenerService;
 import android.service.notification.StatusBarNotification;
+import android.util.Log;
+import android.widget.RemoteViews;
+
+import java.io.ByteArrayOutputStream;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+
+import jp.yokomark.remoteview.reader.RemoteViewsInfo;
+import jp.yokomark.remoteview.reader.RemoteViewsReader;
+import jp.yokomark.remoteview.reader.action.BitmapReflectionAction;
+import jp.yokomark.remoteview.reader.action.RemoteViewsAction;
 
 
 public class NotificationService extends NotificationListenerService {
@@ -48,10 +64,92 @@ public class NotificationService extends NotificationListenerService {
             intent.putExtra("Notification Code", notificationCode);
             sendBroadcast(intent);
         }else if(notificationCode == InterceptedNotificationCode.MAPS_CODE){
-            Bundle bundle = sbn.getNotification().extras;
+            Notification notification = sbn.getNotification();
+            RemoteViews rv = notification.bigContentView;
+            Bundle bundle = notification.extras;
+
+
+            // We have to extract the information from the view
+            RemoteViews        remoteViews = notification.bigContentView;
+            if (remoteViews == null) remoteViews = notification.contentView;
+
+            Bitmap bitmap = null;
+
+            RemoteViewsInfo info = RemoteViewsReader.read(this, remoteViews);
+            for (RemoteViewsAction action : info.getActions()) {
+                if (!(action instanceof BitmapReflectionAction))
+                    continue;
+                BitmapReflectionAction concrete = (BitmapReflectionAction)action;
+
+                if(concrete.getMethodName().equals("setImageBitmap")){
+                    bitmap = concrete.getBitmap();
+                }
+            }
+
+            // Use reflection to examine the m_actions member of the given RemoteViews object.
+            // It's not pretty, but it works.
+            //Our own try - Justin
+            /*List<String> text = new ArrayList<String>();
+            try
+            {
+                Field field = views.getClass().getDeclaredField("mActions");
+                field.setAccessible(true);
+
+                @SuppressWarnings("unchecked")
+                ArrayList<Parcelable> actions = (ArrayList<Parcelable>) field.get(views);
+
+                // Find the setText() and setTime() reflection actions
+                for (Parcelable p : actions)
+                {
+                    Parcel parcel = Parcel.obtain();
+                    p.writeToParcel(parcel, 0);
+                    parcel.setDataPosition(0);
+
+                    // The tag tells which type of action it is (2 is ReflectionAction, from the source)
+                    int tag = parcel.readInt();
+                    //if (tag != 2) continue;
+
+                    // View ID
+                    parcel.readInt();
+
+                    String methodName = parcel.readString();
+
+                    if(methodName.equals("setImageBitmap")){
+                        //parcel.readInt();
+                        //bitmap = parcel.readParcelable(Bitmap.class.getClassLoader());
+                    }
+
+                    if (methodName == null) continue;
+
+                    parcel.recycle();
+                }
+            }
+
+            // It's not usually good style to do this, but then again, neither is the use of reflection...
+            catch (Exception e)
+            {
+                Log.e("NotificationClassifier", e.toString());
+            }*/
+
+
             Intent intent = new  Intent("com.example.justi.notification");
+
+
+            if(bitmap != null){
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream);
+                byte[] byteArray = stream.toByteArray();
+
+                Bundle b = new Bundle();
+                b.putByteArray("Bitmap",byteArray);
+                intent.putExtra("Bitmap Code", b);
+            }
+
+
             intent.putExtra("Notification Code", notificationCode);
             intent.putExtra("Icon Code", bundle);
+
+
             sendBroadcast(intent);
         }
     }
